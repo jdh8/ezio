@@ -13,6 +13,10 @@
 namespace ezio
 {
 
+// Global pointer to raw_disk_io instance for stats reporting
+// Set by raw_disk_io_constructor, accessed by log thread
+static raw_disk_io *g_raw_disk_io_instance = nullptr;
+
 // Helper function: Get cache entries from settings_pack::cache_size
 // cache_size is number of 16KiB blocks (libtorrent definition)
 // Returns number of 16KB entries
@@ -33,7 +37,14 @@ std::unique_ptr<libtorrent::disk_interface> raw_disk_io_constructor(libtorrent::
 	libtorrent::settings_interface const &s,
 	libtorrent::counters &c)
 {
-	return std::make_unique<raw_disk_io>(ioc, s, c);
+	auto disk_io = std::make_unique<raw_disk_io>(ioc, s, c);
+	g_raw_disk_io_instance = disk_io.get();
+	return disk_io;
+}
+
+raw_disk_io *get_raw_disk_io_instance()
+{
+	return g_raw_disk_io_instance;
 }
 
 raw_disk_io::raw_disk_io(libtorrent::io_context &ioc,
